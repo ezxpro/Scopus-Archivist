@@ -3,12 +3,14 @@ from lxml import etree
 from tinydb import TinyDB, Query
 from pathlib import Path
 
+# Function to get the API key
 def get_api_key():
     apikey_path = Path(__file__).resolve().parent / 'apiKey.txt'
     with open(apikey_path, 'r', encoding='utf-8') as file:
         api_key = file.read().strip()  # Read the API key from the file and remove any leading/trailing whitespace
     return api_key
 
+# Function to get the latest volume number
 def get_latest_volume(issn, api_key):
     headers = {
         'Accept': 'application/xml',
@@ -28,6 +30,7 @@ def get_latest_volume(issn, api_key):
 
     return latest_volume
 
+# Function to get articles for a specific volume
 def get_articles_for_volume(issn, volume, api_key):
     headers = {
         'Accept': 'application/xml',
@@ -72,6 +75,7 @@ def get_articles_for_volume(issn, volume, api_key):
 
     return articles
 
+# Function to save data to TinyDB
 def save_to_tinydb(data, filename, existing_dois):
     # Get the directory of the current script
     script_dir = Path(__file__).resolve().parent
@@ -87,22 +91,27 @@ def save_to_tinydb(data, filename, existing_dois):
             db.insert(item)
             existing_dois.add(item['doi'])
         else:
-            print(f"Entry already exists: {item}")
+            # If the entry exists, update it only if it doesn't have all the fields
+            if not all(key in query_result[0] for key in item):
+                db.update(item, Query().doi == item['doi'])
+                print(f"Entry updated: {item}")
 
     return existing_dois  # Return the updated set
 
+# Function to get existing DOIs from TinyDB
 def get_existing_dois(filename):
     script_dir = Path(__file__).resolve().parent
     db_path = script_dir / filename
 
     # Fetch all DOIs from the database first and store them in a set
     existing_dois = set()
-    db = TinyDB(db_path, indent=4, ensure_ascii=False)  # Use the provided filename
+    db = TinyDB(db_path, indent=4, ensure_ascii=False)
     for item in db.all():
         existing_dois.add(item['doi'])
     
     return existing_dois
 
+# Function to process all volumes
 def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
     if latest_volume is None:
         print("No volumes found for this ISSN.")
@@ -112,18 +121,7 @@ def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
         for volume in range(int(latest_volume), 0, -1):
             print(f"volume {volume}:")
             articles = get_articles_for_volume(issn, volume, api_key)
-
-            # Reset data for each volume
-            data = []
-
-            new_articles = [article for article in articles if 'doi' in article and article['doi'] not in existing_dois]
-            for article in new_articles:
-                article['volume'] = volume
-                data.append(article)
-                print(f"  - {article}")
-
-            # Save to the database after each volume
-            existing_dois = save_to_tinydb(data, filename, existing_dois)  # Update the set with the returned value
+            existing_dois = save_to_tinydb(articles, filename, existing_dois)  # Update the set with the returned value
 
 def main():
     issn = "00043702"
