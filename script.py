@@ -48,6 +48,24 @@ def get_articles_for_volume(issn, volume, api_key):
         doi = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}doi')
         if doi is not None:
             article['doi'] = doi.text
+        cover_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDate')
+        if cover_date is not None:
+            article['cover_date'] = cover_date.text
+        display_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDisplayDate')
+        if display_date is not None:
+            article['display_date'] = display_date.text
+        issue_identifier = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}issueIdentifier')
+        if issue_identifier is not None:
+            article['issue_identifier'] = issue_identifier.text
+        page_range = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}pageRange')
+        if page_range is not None:
+            article['page_range'] = page_range.text
+        open_access = entry.find('{http://www.w3.org/2005/Atom}openaccessFlag')
+        if open_access is not None:
+            article['open_access'] = open_access.text
+        affiliations = entry.findall('{http://www.w3.org/2005/Atom}affiliation')
+        if affiliations is not None:
+            article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text, 'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for aff in affiliations]
         articles.append(article)
 
     return articles
