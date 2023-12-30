@@ -3,7 +3,8 @@ from lxml import etree
 from tinydb import TinyDB, Query
 from pathlib import Path
 
-with open('apiKey.txt', 'r', encoding='utf-8') as file:
+apikey_path = Path(__file__).resolve().parent / 'apiKey.txt'
+with open(apikey_path, 'r', encoding='utf-8') as file:
     api_key = file.read().strip()  # Read the API key from the file and remove any leading/trailing whitespace
 
 
@@ -93,9 +94,12 @@ def save_to_tinydb(data, filename, existing_dois):
 issn = input("Please enter the ISSN: ")  # Prompt for ISSN
 filename = input("Please enter the name of the JSON file: ")  # Prompt for JSON filename
 
+script_dir = Path(__file__).resolve().parent
+db_path = script_dir / filename
+
 # Fetch all DOIs from the database first and store them in a set
 existing_dois = set()
-db = TinyDB(filename, indent=4, ensure_ascii=False)  # Use the provided filename
+db = TinyDB(db_path, indent=4, ensure_ascii=False)  # Use the provided filename
 for item in db.all():
     existing_dois.add(item['doi'])
 
