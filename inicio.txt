@@ -1,0 +1,5 @@
+api key: 1788986f6b20d9f6fe6115c588a06023
+
+link da request: https://api.elsevier.com/content/search/scopus?query=ISSN(0140-6736)%20AND%20ISSUE(10415)
+
+link da request com auth: https://api.elsevier.com/content/search/scopus?query=ISSN(0140-6736)%20AND%20ISSUE(10415)&apiKey=7f59af901d2d86f78a1fd60c1bf9426a'
