@@ -3,10 +3,11 @@ from lxml import etree
 from tinydb import TinyDB, Query
 from pathlib import Path
 
-apikey_path = Path(__file__).resolve().parent / 'apiKey.txt'
-with open(apikey_path, 'r', encoding='utf-8') as file:
-    api_key = file.read().strip()  # Read the API key from the file and remove any leading/trailing whitespace
-
+def get_api_key():
+    apikey_path = Path(__file__).resolve().parent / 'apiKey.txt'
+    with open(apikey_path, 'r', encoding='utf-8') as file:
+        api_key = file.read().strip()  # Read the API key from the file and remove any leading/trailing whitespace
+    return api_key
 
 def get_latest_volume(issn, api_key):
     headers = {
@@ -65,7 +66,7 @@ def get_articles_for_volume(issn, volume, api_key):
         if open_access is not None:
             article['open_access'] = open_access.text
         affiliations = entry.findall('{http://www.w3.org/2005/Atom}affiliation')
-        if affiliations is not None:
+        if affiliations:
             article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text, 'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for aff in affiliations]
         articles.append(article)
 
@@ -90,38 +91,50 @@ def save_to_tinydb(data, filename, existing_dois):
 
     return existing_dois  # Return the updated set
 
-# Usage
-issn = input("Please enter the ISSN: ")  # Prompt for ISSN
-filename = input("Please enter the name of the JSON file: ")  # Prompt for JSON filename
+def get_existing_dois(filename):
+    script_dir = Path(__file__).resolve().parent
+    db_path = script_dir / filename
 
-script_dir = Path(__file__).resolve().parent
-db_path = script_dir / filename
+    # Fetch all DOIs from the database first and store them in a set
+    existing_dois = set()
+    db = TinyDB(db_path, indent=4, ensure_ascii=False)  # Use the provided filename
+    for item in db.all():
+        existing_dois.add(item['doi'])
+    
+    return existing_dois
 
-# Fetch all DOIs from the database first and store them in a set
-existing_dois = set()
-db = TinyDB(db_path, indent=4, ensure_ascii=False)  # Use the provided filename
-for item in db.all():
-    existing_dois.add(item['doi'])
+def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
+    if latest_volume is None:
+        print("No volumes found for this ISSN.")
+    else:
+        print(f"Latest volume: {latest_volume}")
 
-latest_volume = get_latest_volume(issn, api_key)
+        for volume in range(int(latest_volume), 0, -1):
+            print(f"volume {volume}:")
+            articles = get_articles_for_volume(issn, volume, api_key)
 
-if latest_volume is None:
-    print("No volumes found for this ISSN.")
-else:
-    print(f"Latest volume: {latest_volume}")
+            # Reset data for each volume
+            data = []
 
-    for volume in range(int(latest_volume), 0, -1):
-        print(f"volume {volume}:")
-        articles = get_articles_for_volume(issn, volume, api_key)
+            new_articles = [article for article in articles if 'doi' in article and article['doi'] not in existing_dois]
+            for article in new_articles:
+                article['volume'] = volume
+                data.append(article)
+                print(f"  - {article}")
 
-        # Reset data for each volume
-        data = []
+            # Save to the database after each volume
+            existing_dois = save_to_tinydb(data, filename, existing_dois)  # Update the set with the returned value
 
-        new_articles = [article for article in articles if 'doi' in article and article['doi'] not in existing_dois]
-        for article in new_articles:
-            article['volume'] = volume
-            data.append(article)
-            print(f"  - {article}")
+def main():
+    issn = "00043702"
+    filename = "ArtificialIntelligence.json"
+    #issn = input("Please enter the ISSN: ")  # Prompt for ISSN
+    #filename = input("Please enter the name of the JSON file: ")  # Prompt for JSON filename
 
-        # Save to the database after each volume
-        existing_dois = save_to_tinydb(data, filename, existing_dois)  # Update the set with the returned value
+    existing_dois = get_existing_dois(filename)
+    api_key = get_api_key()
+    latest_volume = get_latest_volume(issn, api_key)
+    process_volumes(issn, latest_volume, api_key, existing_dois, filename)
+
+if __name__ == "__main__":
+    main()
