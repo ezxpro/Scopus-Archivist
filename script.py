@@ -40,6 +40,12 @@ def get_articles_for_volume(issn, volume, api_key):
     response = requests.get(f"https://api.elsevier.com/content/search/scopus?query=ISSN({issn})%20AND%20volume({volume})", headers=headers)
     root = etree.fromstring(response.content)
 
+    # Check if the total results are zero
+    total_results = root.find('{http://a9.com/-/spec/opensearch/1.1/}totalResults')
+    if total_results is not None and int(total_results.text) == 0:
+        print(f"Volume number {volume} is empty, skipping to the next one.")
+        return []
+
     # Extract the article metadata
     articles = []
     for entry in root.xpath('//atom:entry', namespaces={'atom': 'http://www.w3.org/2005/Atom'}):
@@ -53,6 +59,9 @@ def get_articles_for_volume(issn, volume, api_key):
         doi = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}doi')
         if doi is not None:
             article['doi'] = doi.text
+        volume = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}volume')
+        if volume is not None:
+                article['volume'] = volume.text
         cover_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDate')
         if cover_date is not None:
             article['cover_date'] = cover_date.text
@@ -84,17 +93,20 @@ def save_to_tinydb(data, filename, existing_dois):
     db = TinyDB(file_path, indent=4, ensure_ascii=False)
 
     for item in data:
-        # Use TinyDB query to check for existing DOI
-        query_result = db.search(Query().doi == item['doi'])
-        
-        if not query_result:
-            db.insert(item)
-            existing_dois.add(item['doi'])
-        else:
-            # If the entry exists, update it only if it doesn't have all the fields
-            if not all(key in query_result[0] for key in item):
-                db.update(item, Query().doi == item['doi'])
-                print(f"Entry updated: {item}")
+        # Check if 'doi' key is in the item
+        if 'doi' in item:
+            # Use TinyDB query to check for existing DOI
+            query_result = db.search(Query().doi == item['doi'])
+            
+            if not query_result:
+                db.insert(item)
+                existing_dois.add(item['doi'])
+                print(f"Inserting in database: {item['title']}")
+            else:
+                # If the entry exists, update it only if it doesn't have all the fields
+                if not all(key in query_result[0] for key in item):
+                    db.update(item, Query().doi == item['doi'])
+                    print(f"Entry updated: {item}")
 
     return existing_dois  # Return the updated set
 
@@ -123,11 +135,12 @@ def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
             articles = get_articles_for_volume(issn, volume, api_key)
             existing_dois = save_to_tinydb(articles, filename, existing_dois)  # Update the set with the returned value
 
+# Main function to run the script
 def main():
-    issn = "00043702"
-    filename = "ArtificialIntelligence.json"
-    #issn = input("Please enter the ISSN: ")  # Prompt for ISSN
-    #filename = input("Please enter the name of the JSON file: ")  # Prompt for JSON filename
+    issn = "1574-0137"
+    filename = "teste.json"
+    # issn = input("Please enter the ISSN: ")  # Prompt for ISSN
+    # filename = input("Please enter the name of the JSON file: ")  # Prompt for JSON filename
 
     existing_dois = get_existing_dois(filename)
     api_key = get_api_key()
