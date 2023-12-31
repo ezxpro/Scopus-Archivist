@@ -14,8 +14,13 @@ You can check all the journals published by Elsevier (here)[https://www.elsevier
 3. Execute the script with the command `python script.py`.
 4. When prompted, input the ISSN (International Standard Serial Number) for which you wish to extract data.
 5. Specify the name of the output file, ensuring to append `.json` as the extension.
-![image](https://github.com/ezxpro/Scopus-Archivist/assets/15344931/cb74286c-6c4c-499f-a38e-28933ace2c6c)
-6. Wait for the script to complete its execution. The output file will contain an entry for each article published in the specified journal. 
+6. Wait for the script to complete its execution. The output file will contain an entry for each article published in the specified journal.
+### Example
+```shell
+$ python script.py
+Please enter the ISSN: 0024-3841
+Please enter the name of the JSON file: Elsevier Lingua.json
+```
 
 Each entry will have the following structure:
 ```json
