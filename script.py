@@ -3,12 +3,14 @@ from lxml import etree
 from tinydb import TinyDB, Query
 from pathlib import Path
 
+
 # Function to get the API key
 def get_api_key():
     apikey_path = Path(__file__).resolve().parent / 'apiKey.txt'
     with open(apikey_path, 'r', encoding='utf-8') as file:
         api_key = file.read().strip()  # Read the API key from the file and remove any leading/trailing whitespace
     return api_key
+
 
 # Function to get the latest volume number
 def get_latest_volume(issn, api_key):
@@ -30,6 +32,7 @@ def get_latest_volume(issn, api_key):
 
     return latest_volume
 
+
 # Function to get articles for a specific volume
 def get_articles_for_volume(issn, volume, api_key):
     headers = {
@@ -37,7 +40,8 @@ def get_articles_for_volume(issn, volume, api_key):
         'X-ELS-APIKey': api_key
     }
 
-    response = requests.get(f"https://api.elsevier.com/content/search/scopus?query=ISSN({issn})%20AND%20volume({volume})", headers=headers)
+    response = requests.get(
+        f"https://api.elsevier.com/content/search/scopus?query=ISSN({issn})%20AND%20volume({volume})", headers=headers)
     root = etree.fromstring(response.content)
 
     # Check if the total results are zero
@@ -71,7 +75,9 @@ def get_articles_for_volume(issn, volume, api_key):
         open_access = entry.find('{http://www.w3.org/2005/Atom}openaccessFlag')
         article['open_access'] = open_access.text if open_access is not None else None
         affiliations = entry.findall('{http://www.w3.org/2005/Atom}affiliation')
-        article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text, 'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for aff in affiliations] if affiliations else None
+        article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text,
+                                    'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for
+                                   aff in affiliations] if affiliations else None
         articles.append(article)
 
     return articles
@@ -90,7 +96,7 @@ def save_to_tinydb(data, filename, existing_dois):
         if 'doi' in item:
             # Use TinyDB query to check for existing DOI
             query_result = db.search(Query().doi == item['doi'])
-            
+
             if not query_result:
                 db.insert(item)
                 existing_dois.add(item['doi'])
@@ -103,6 +109,7 @@ def save_to_tinydb(data, filename, existing_dois):
 
     return existing_dois  # Return the updated set
 
+
 # Function to get existing DOIs from TinyDB
 def get_existing_dois(filename):
     script_dir = Path(__file__).resolve().parent
@@ -113,8 +120,9 @@ def get_existing_dois(filename):
     db = TinyDB(db_path, indent=4, ensure_ascii=False)
     for item in db.all():
         existing_dois.add(item['doi'])
-    
+
     return existing_dois
+
 
 # Function to process all volumes
 def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
@@ -128,6 +136,7 @@ def process_volumes(issn, latest_volume, api_key, existing_dois, filename):
             articles = get_articles_for_volume(issn, volume, api_key)
             existing_dois = save_to_tinydb(articles, filename, existing_dois)  # Update the set with the returned value
 
+
 # Main function to run the script
 def main():
     issn = "1574-0137"
@@ -139,6 +148,7 @@ def main():
     api_key = get_api_key()
     latest_volume = get_latest_volume(issn, api_key)
     process_volumes(issn, latest_volume, api_key, existing_dois, filename)
+
 
 if __name__ == "__main__":
     main()
