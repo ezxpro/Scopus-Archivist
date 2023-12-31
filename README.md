@@ -2,11 +2,11 @@
 
 Scopus-Archivist is a Python script that utilizes the Scopus API to fetch and archive metadata for all articles ever published under a given ISSN. This tool is specifically tailored for Elsevier publications.
 
-You can check all the journals published by Elsevier (here)[https://www.elsevier.com/products/journals]
+You can check all the journals published by Elsevier [here](https://www.elsevier.com/products/journals)
 
 ## Requirements
 - Python 3.x
-- A valid Elsevier API Key. You can learn more about it (here)[https://dev.elsevier.com/]
+- A valid Elsevier API Key. You can learn more about it [here](https://dev.elsevier.com/)
 
 ## Usage
 1. Clone this repository.
