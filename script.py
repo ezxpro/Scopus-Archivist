@@ -51,38 +51,31 @@ def get_articles_for_volume(issn, volume, api_key):
     for entry in root.xpath('//atom:entry', namespaces={'atom': 'http://www.w3.org/2005/Atom'}):
         article = {}
         title = entry.find('{http://purl.org/dc/elements/1.1/}title')
-        if title is not None:
-            article['title'] = title.text
+        article['title'] = title.text if title is not None else None
         author = entry.find('{http://purl.org/dc/elements/1.1/}creator')
-        if author is not None:
-            article['author'] = author.text
+        article['author'] = author.text if author is not None else None
+        pub_name = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}publicationName')
+        article['publicationName'] = pub_name.text if pub_name is not None else None
         doi = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}doi')
-        if doi is not None:
-            article['doi'] = doi.text
+        article['doi'] = doi.text if doi is not None else None
         volume = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}volume')
-        if volume is not None:
-                article['volume'] = int(volume.text)
+        article['volume'] = int(volume.text) if volume is not None else None
         cover_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDate')
-        if cover_date is not None:
-            article['cover_date'] = cover_date.text
+        article['cover_date'] = cover_date.text if cover_date is not None else None
         display_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDisplayDate')
-        if display_date is not None:
-            article['display_date'] = display_date.text
+        article['display_date'] = display_date.text if display_date is not None else None
         issue_identifier = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}issueIdentifier')
-        if issue_identifier is not None:
-            article['issue_identifier'] = issue_identifier.text
+        article['issue_identifier'] = issue_identifier.text if issue_identifier is not None else None
         page_range = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}pageRange')
-        if page_range is not None:
-            article['page_range'] = page_range.text
+        article['page_range'] = page_range.text if page_range is not None else None
         open_access = entry.find('{http://www.w3.org/2005/Atom}openaccessFlag')
-        if open_access is not None:
-            article['open_access'] = open_access.text
+        article['open_access'] = open_access.text if open_access is not None else None
         affiliations = entry.findall('{http://www.w3.org/2005/Atom}affiliation')
-        if affiliations:
-            article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text, 'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for aff in affiliations]
+        article['affiliations'] = [{'name': aff.find('{http://www.w3.org/2005/Atom}affilname').text, 'country': aff.find('{http://www.w3.org/2005/Atom}affiliation-country').text} for aff in affiliations] if affiliations else None
         articles.append(article)
 
     return articles
+
 
 # Function to save data to TinyDB
 def save_to_tinydb(data, filename, existing_dois):
