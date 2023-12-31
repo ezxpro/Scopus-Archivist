@@ -55,11 +55,11 @@ def get_articles_for_volume(issn, volume, api_key):
         author = entry.find('{http://purl.org/dc/elements/1.1/}creator')
         article['author'] = author.text if author is not None else None
         pub_name = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}publicationName')
+        article['issn'] = issn
         article['publicationName'] = pub_name.text if pub_name is not None else None
         doi = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}doi')
         article['doi'] = doi.text if doi is not None else None
-        volume = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}volume')
-        article['volume'] = int(volume.text) if volume is not None else None
+        article['volume'] = volume
         cover_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDate')
         article['cover_date'] = cover_date.text if cover_date is not None else None
         display_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDisplayDate')
