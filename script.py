@@ -61,7 +61,7 @@ def get_articles_for_volume(issn, volume, api_key):
             article['doi'] = doi.text
         volume = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}volume')
         if volume is not None:
-                article['volume'] = volume.text
+                article['volume'] = int(volume.text)
         cover_date = entry.find('{http://prismstandard.org/namespaces/basic/2.0/}coverDate')
         if cover_date is not None:
             article['cover_date'] = cover_date.text
